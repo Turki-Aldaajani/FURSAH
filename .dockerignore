@@ -1,0 +1,9 @@
+frontend/
+day4/
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+backend/.env
+**/node_modules/
+.git

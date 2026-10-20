@@ -1,0 +1,17 @@
+# Local dependencies, secrets and generated output (also valid as a standalone project).
+node_modules/
+.venv/
+.env
+.env.*
+!.env.example
+dist/
+*.tsbuildinfo
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.log
+*.jsonl
+!backend/evals/dev_cases.jsonl
+!backend/evals/team_cases.jsonl
+backend/evals/results/
+.DS_Store
