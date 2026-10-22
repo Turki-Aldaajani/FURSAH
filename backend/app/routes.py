@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from uuid import uuid4
 from dataclasses import replace
+from . import instrumentation as ins
 from .infrastructure.tracing import Tracer
 
 from fastapi import APIRouter, Depends, Request
@@ -70,6 +71,7 @@ async def discover_route(
         step="request_received",
         component="api",
         outcome="success",
+        attributes=ins.safe(ins.request_attributes, body, deps, deps.evaluation_time),
     )
 
     try:
@@ -96,6 +98,8 @@ async def discover_route(
             component="service",
             outcome=exc.public_code,
             elapsed_ms=elapsed,
+            attributes={"error": {"kind": type(exc).__name__, "public_code": exc.public_code,
+                                  "http_status": exc.http_status}},
         )
         return _error_response(
             request_id,
@@ -103,13 +107,14 @@ async def discover_route(
             exc.public_message,
             status_code=exc.http_status,
         )
-    except Exception:
+    except Exception as exc:
         deps.tracer.emit(
             request_id=request_id,
             step="request_failed",
             component="service",
             outcome=ErrorCode.INTERNAL,
             elapsed_ms=(time.perf_counter() - started) * 1000,
+            attributes={"error": {"exception_type": type(exc).__name__}},  # type only: messages can hold data
         )
         raise
 
@@ -125,6 +130,7 @@ async def discover_route(
             for rec in result.recommendations
             for source_id in rec.source_ids
         ],
+        attributes=ins.safe(ins.response_attributes, result, deps),
     )
     return result
 

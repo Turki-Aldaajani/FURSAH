@@ -6,13 +6,21 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from opentelemetry import trace
 
 from . import routes
 from .infrastructure.config import get_settings
 from .infrastructure.errors import ErrorCode
+from .infrastructure.observability import setup_observability
+from .infrastructure.tracing import Tracer
 from .schemas import ApiErrorDetail, ApiErrorResponse
 
 settings = get_settings()
+
+# Day 4: set up tracing once, before the first request (no-op unless FURSAH_PHOENIX_ENABLED=true).
+# Skipped when a tracer provider already exists: evals/run_eval.py sets one up before importing the app.
+if isinstance(trace.get_tracer_provider(), trace.ProxyTracerProvider):
+    setup_observability()
 
 app = FastAPI(
     title="FURSAH API",
@@ -50,6 +58,11 @@ async def request_validation_handler(request: Request, exc: RequestValidationErr
         error_code=ErrorCode.REQUEST_VALIDATION,
         message="The request body is invalid.",
         details=details,
+    )
+    # Rejected before the route runs, so it is traced here. Field paths only, never the values.
+    Tracer(settings.trace_jsonl_path).emit(
+        request_id=request_id, step="request_failed", component="api", outcome=ErrorCode.REQUEST_VALIDATION,
+        attributes={"n_errors": len(details), "invalid_fields": [d.field for d in details]},
     )
     return JSONResponse(status_code=422, content=payload.model_dump(mode="json"))
 

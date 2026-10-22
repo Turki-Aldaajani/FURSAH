@@ -4,6 +4,57 @@
 
 # FURSAH — فرصة
 
+## حالة هذا المستودع (2026-10-22)
+
+تطبيق بحث عن الفرص مبني على حزمة SAAI (1,000 إعلان عربي خيالي). المنفّذ هنا: إعداد البيانات وتصنيف الأنواع (`data/`)، وبحث حتمي مع تفسير اختياري للطلب بنموذج عبر OpenRouter (`backend/app/`)، وتتبّع JSONL وOpenTelemetry، ومقيّمات Day 4 (`backend/evals/`). تفاصيل كل مرحلة في [`docs/handoff/`](docs/handoff/)، والحالة النهائية لـ Day 4 في [`docs/handoff/DAY4_FINAL_STATUS.md`](docs/handoff/DAY4_FINAL_STATUS.md).
+
+**آخر نتائج متحقق منها:** 105 اختبارات للخلفية و11 لقواعد الأنواع ناجحة؛ التقييم الرسمي على الحالات الـ24: **16 PASS / 8 FAIL**؛ حالة الفريق `TEAM-01` (`needs_info`) ناجحة. حالة Day 4: **COMPLETE WITH LIMITATIONS**.
+
+### التشغيل (من `backend/`، Python 3.12)
+
+```bash
+python -m venv .venv            # ثم فعّل البيئة
+python -m pip install -r requirements.txt
+cp .env.example .env            # ضع مفتاح النموذج في .env فقط، ولا تضعه في Git
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+الواجهة من `frontend/`: `npm ci` ثم `cp .env.example .env` ثم `npm run dev` (انظر [frontend/README.md](frontend/README.md)). بدون مفتاح نموذج يعمل البحث بالقواعد الحتمية وحدها.
+
+### الاختبارات والتقييم (من `backend/`)
+
+```bash
+python -m unittest discover -s tests                        # 105 اختبارات
+python -m pip install arize-phoenix-otel==0.17.1 opentelemetry-sdk==1.44.0   # لازم لمشغّل التقييم فقط (بلا خادم Phoenix)
+python -m evals.run_eval --label <name>                     # الحالات المشتركة الـ24
+python -m evals.run_eval --cases evals/team_cases.jsonl     # حالة الفريق
+```
+
+النتائج تُحفظ في `backend/evals/results/` (مستبعدة من Git). اضبط `FURSAH_EVALUATION_TIME=2026-10-18T12:00:00+03:00` في `.env` لتطابق الواجهة وقت التقييم. ومع تفعيل النموذج تتفاوت بعض الدرجات بين التشغيلات.
+
+### الملفات الرئيسية
+
+| المسار | المحتوى |
+|---|---|
+| `backend/app/repository.py` | تحميل البيانات المجهزة وتجميع المصادر والفلاتر والترتيب |
+| `backend/app/workflow.py` | تفسير الطلب والدمج مع القيود والـspans |
+| `backend/app/agent.py` | عميل النموذج والتحقق من خطته |
+| `backend/app/instrumentation.py`، `infrastructure/tracing.py` | أحداث JSONL مع حجب الخصوصية |
+| `backend/evals/graders.py`، `team_cases.jsonl` | مقيّمات Day 4 وحالة الفريق (`run_eval.py` و`dev_cases.jsonl` من المنظمين) |
+| `data/opportunity_type_rules.py`، `data/prepared/` | قواعد تصنيف الأنواع والبيانات المجهزة التي يقرؤها الخادم |
+| `day4/` | أوراق عمل Day 4 |
+
+### القيود المعروفة
+
+- Phoenix غير مثبت، فالـspans تُجمع داخل العملية ولا تُعرض في واجهة Phoenix.
+- إخفاقات متبقية في التقييم: نتائج خارج الموضوع (DEV-09، DEV-21)، و«لم يفتح بعد» (DEV-08)، و«العدول عن الإلغاء» (DEV-02)، ونقص في الاستدعاء والترتيب (DEV-04، DEV-10، DEV-16)، وتعارض وسوم النوع مع النص في DEV-07 (يُرفع للمنظمين).
+
+### مواصلة العمل
+
+اعمل محليًا، وشغّل الاختبارات والتقييم، ثم `git add` للملفات المقصودة و`git commit`، ثم `git push`. لا ترفع `.env` ولا `.venv` ولا `backend/evals/results/`، فـ `.gitignore` يستبعدها.
+
+---
+
 Build an opportunity-search application using your Day 1 design and the frameworks and tools you selected on Day 2.
 
 SAAI supplies **1,000 raw fictional announcements, a finished frontend and a working API shell**. You implement preparation, internal schemas, storage, model clients, prompts, retrieval, tools, orchestration and business rules. The starter does not return pretend recommendations.

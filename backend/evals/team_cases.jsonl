@@ -1,0 +1,1 @@
+{"case_id": "TEAM-01", "query": "أبحث عن ورشة في جدة", "profile": {"interests": [], "skills": null}, "constraints": {"location_preference": ["الرياض"]}, "evaluation_time": "2026-10-18T12:00:00+03:00", "expected": {"status": "needs_info", "acceptable_source_ids": [], "excluded_source_ids": {}, "uncertain_source_ids": {}}}
