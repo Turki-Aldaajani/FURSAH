@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "{backend/app/**,data/opportunity_type_rules.py,data/prepared/source_preparation.json}",
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
+}

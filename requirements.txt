@@ -1,0 +1,2 @@
+# Vercel installs this file; the pinned list stays in one place.
+-r backend/requirements.txt
